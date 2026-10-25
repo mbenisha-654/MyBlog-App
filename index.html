@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyBlog App</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f1f3f5;
+    color: #222;
+}
+
+header {
+    background: #17366b;
+    color: white;
+    padding: 18px 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+header h1 {
+    margin: 0;
+}
+
+nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}
+
+main {
+    max-width: 1000px;
+    margin: 25px auto;
+    padding: 0 18px;
+}
+
+section {
+    background: white;
+    padding: 25px;
+    margin-bottom: 22px;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px #00000010;
+    scroll-margin-top: 20px;
+}
+
+input, textarea {
+    display: block;
+    width: 100%;
+    padding: 13px;
+    margin: 12px 0;
+    border: 1px solid #bbb;
+    border-radius: 6px;
+    font-size: 16px;
+}
+
+textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+button {
+    background: #17366b;
+    color: white;
+    padding: 12px 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+button:hover {
+    background: #28549b;
+}
+
+form button {
+    width: 100%;
+}
+
+.blog-post {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+    overflow-wrap: anywhere;
+}
+
+.blog-post h3 {
+    color: #17366b;
+}
+
+.message {
+    font-weight: bold;
+    overflow-wrap: anywhere;
+}
+
+footer {
+    background: #17366b;
+    color: white;
+    text-align: center;
+    padding: 20px;
+    margin-top: 30px;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 600px) {
+    header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    nav {
+        gap: 12px;
+    }
+
+    section {
+        padding: 18px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>MyBlog</h1>
+
+    <nav>
+        <a href="#home">Home</a>
+        <a href="#login">Login</a>
+        <a href="#register">Register</a>
+        <a href="#dashboard">Dashboard</a>
+        <a href="#create-blog">Create Blog</a>
+    </nav>
+</header>
+
+<main>
+
+    <section id="home">
+        <h2>Welcome to MyBlog!</h2>
+        <p>Share your thoughts and stories with the world.</p>
+    </section>
+
+    <section id="login">
+        <h2>Login</h2>
+
+        <form id="loginForm">
+            <input id="loginEmail" type="email"
+                   placeholder="Email address" required>
+
+            <input id="loginPassword" type="password"
+                   placeholder="Password" required>
+
+            <button type="submit">Login</button>
+        </form>
+
+        <p id="loginMessage" class="message" role="status"></p>
+    </section>
+
+    <section id="register">
+        <h2>Create an Account</h2>
+
+        <form id="registerForm">
+            <input id="regName" type="text"
+                   placeholder="Your name" required>
+
+            <input id="regEmail" type="email"
+                   placeholder="Email address" required>
+
+            <input id="regPassword" type="password"
+                   placeholder="Password (minimum 6 characters)"
+                   minlength="6" required>
+
+            <button type="submit">Register</button>
+        </form>
+
+        <p id="registerMessage" class="message" role="status"></p>
+    </section>
+
+    <section id="create-blog">
+        <h2>Create a Blog</h2>
+
+        <p id="blogNotice">Please login before publishing a blog.</p>
+
+        <form id="blogForm">
+            <input id="blogTitle" type="text"
+                   placeholder="Blog title" required>
+
+            <textarea id="blogContent"
+                      placeholder="Write your blog here..."
+                      required></textarea>
+
+            <button type="submit">Publish Blog</button>
+        </form>
+
+        <p id="blogMessage" class="message" role="status"></p>
+    </section>
+
+    <section id="published-blogs">
+        <h2>Published Blogs</h2>
+        <div id="blogList">
+            <p>No blogs published yet.</p>
+        </div>
+    </section>
+
+    <section id="dashboard">
+        <h2>Dashboard</h2>
+
+        <p id="welcomeMessage">
+            Welcome! Please login to view your dashboard.
+        </p>
+
+        <p id="blogCount"></p>
+
+        <button id="logoutButton" type="button" hidden>
+            Logout
+        </button>
+    </section>
+
+</main>
+
+<footer>
+    <p>© 2026 MyBlog | My Codomax Internship Project</p>
+</footer>
+
+<script>
+const USERS_KEY = "myBlogDemoUsers";
+const BLOGS_KEY = "myBlogDemoPosts";
+const SESSION_KEY = "myBlogDemoCurrentUser";
+
+function readData(key, fallback) {
+    try {
+        const value = JSON.parse(localStorage.getItem(key));
+        return value === null ? fallback : value;
+    } catch {
+        return fallback;
+    }
+}
+
+function getUsers() {
+    const users = readData(USERS_KEY, []);
+    return Array.isArray(users) ? users : [];
+}
+
+function getBlogs() {
+    const blogs = readData(BLOGS_KEY, []);
+    return Array.isArray(blogs) ? blogs : [];
+}
+
+function getCurrentUser() {
+    const email = localStorage.getItem(SESSION_KEY);
+    return getUsers().find(user => user.email === email) || null;
+}
+
+function showMessage(id, message, success) {
+    const element = document.getElementById(id);
+    element.textContent = message;
+    element.style.color = success ? "green" : "crimson";
+}
+
+document.getElementById("registerForm")
+.addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    const name = document.getElementById("regName")
+        .value.trim();
+    const email = document.getElementById("regEmail")
+        .value.trim().toLowerCase();
+    const password = document.getElementById("regPassword")
+        .value;
+
+    if (name.length === 0) {
+        showMessage("registerMessage", "Enter your name.", false);
+        return;
+    }
+
+    if (password.length < 6) {
+        showMessage("registerMessage",
+            "Password must contain at least 6 characters.", false);
+        return;
+    }
+
+    const users = getUsers();
+
+    if (users.some(user => user.email === email)) {
+        showMessage("registerMessage",
+            "This email is already registered. Please login.", false);
+        return;
+    }
+
+    users.push({ name, email, password });
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+
+    showMessage("registerMessage",
+        "Registration successful! Please login.", true);
+
+    document.getElementById("registerForm").reset();
+    document.getElementById("loginEmail").value = email;
+
+    document.getElementById("login").scrollIntoView({
+        behavior: "smooth"
+    });
+});
+
+document.getElementById("loginForm")
+.addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    const email = document.getElementById("loginEmail")
+        .value.trim().toLowerCase();
+    const password = document.getElementById("loginPassword")
+        .value;
+
+    const user = getUsers().find(
+        item => item.email === email && item.password === password
+    );
+
+    if (!user) {
+        showMessage("loginMessage",
+            "Incorrect email or password. Please register first.", false);
+        return;
+    }
+
+    localStorage.setItem(SESSION_KEY, user.email);
+
+    showMessage("loginMessage", "Login successful!", true);
+    document.getElementById("loginForm").reset();
+
+    updatePage();
+
+    document.getElementById("dashboard").scrollIntoView({
+        behavior: "smooth"
+    });
+});
+
+document.getElementById("blogForm")
+.addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    const user = getCurrentUser();
+
+    if (!user) {
+        showMessage("blogMessage",
+            "Please login before publishing a blog.", false);
+        return;
+    }
+
+    const title = document.getElementById("blogTitle")
+        .value.trim();
+    const content = document.getElementById("blogContent")
+        .value.trim();
+
+    if (!title || !content) {
+        showMessage("blogMessage",
+            "Please enter the title and content.", false);
+        return;
+    }
+
+    const blogs = getBlogs();
+
+    blogs.unshift({
+        title,
+        content,
+        author: user.name,
+        email: user.email,
+        date: new Date().toLocaleDateString()
+    });
+
+    localStorage.setItem(BLOGS_KEY, JSON.stringify(blogs));
+
+    document.getElementById("blogForm").reset();
+
+    showMessage("blogMessage", "Blog published successfully!", true);
+
+    updatePage();
+
+    document.getElementById("published-blogs").scrollIntoView({
+        behavior: "smooth"
+    });
+});
+
+document.getElementById("logoutButton")
+.addEventListener("click", function() {
+    localStorage.removeItem(SESSION_KEY);
+
+    showMessage("loginMessage", "You have logged out.", true);
+
+    updatePage();
+
+    document.getElementById("login").scrollIntoView({
+        behavior: "smooth"
+    });
+});
+
+function updatePage() {
+    const user = getCurrentUser();
+    const blogs = getBlogs();
+
+    document.getElementById("blogNotice").textContent = user
+        ? "Logged in as " + user.name + ". You can publish a blog."
+        : "Please login before publishing a blog.";
+
+    document.getElementById("welcomeMessage").textContent = user
+        ? "Welcome, " + user.name + "!"
+        : "Please login to view your dashboard.";
+
+    document.getElementById("logoutButton").hidden = !user;
+
+    const myBlogs = user
+        ? blogs.filter(blog => blog.email === user.email)
+        : [];
+
+    document.getElementById("blogCount").textContent = user
+        ? "Your published blogs: " + myBlogs.length
+        : "";
+
+    const list = document.getElementById("blogList");
+    list.replaceChildren();
+
+    if (blogs.length === 0) {
+        const empty = document.createElement("p");
+        empty.textContent = "No blogs published yet.";
+        list.appendChild(empty);
+        return;
+    }
+
+    blogs.forEach(blog => {
+        const article = document.createElement("article");
+        article.className = "blog-post";
+
+        const heading = document.createElement("h3");
+        heading.textContent = blog.title;
+
+        const content = document.createElement("p");
+        content.textContent = blog.content;
+
+        const author = document.createElement("small");
+        author.textContent = "By " + blog.author + " | " + blog.date;
+
+        article.append(heading, content, author);
+        list.appendChild(article);
+    });
+}
+
+updatePage();
+</script>
+
+</body>
+</html>
